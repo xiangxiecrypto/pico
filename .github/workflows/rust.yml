@@ -8,6 +8,15 @@ on:
       - '.gitignore'
       - 'Makefile'
       - 'tools/**'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - '.gitignore'
+      - 'Makefile'
+      - 'tools/**'
 
 name: Check, Test, and Format
 
