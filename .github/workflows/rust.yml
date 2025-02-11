@@ -2,21 +2,25 @@ on:
   pull_request:
     branches:
       - main
+      - release/v*
     paths-ignore:
       - 'docs/**'
       - 'README.md'
       - '.gitignore'
       - 'Makefile'
       - 'tools/**'
+      - 'scripts/**'
   push:
     branches:
       - main
+      - release/v*
     paths-ignore:
       - 'docs/**'
       - 'README.md'
       - '.gitignore'
       - 'Makefile'
       - 'tools/**'
+      - 'scripts/**'
 
 name: Check, Test, and Format
 
