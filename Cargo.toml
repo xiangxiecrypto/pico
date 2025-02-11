@@ -8,7 +8,7 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 keywords = ["zkvm", "plonky3", "stark", "FRI"]
 categories = ["cryptography"]
-repository = "https://github.com/brevis-network/brevis-vm"
+repository = "https://github.com/brevis-network/pico"
 
 
 [profile.release]

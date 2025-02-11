@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/brevis-network/brevis-vm/gnark/sdk"
+	"github.com/brevis-network/pico/gnark/sdk"
 	"os"
 )
 

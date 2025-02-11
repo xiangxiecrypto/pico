@@ -1,4 +1,4 @@
-module github.com/brevis-network/brevis-vm/gnark
+module github.com/brevis-network/pico/gnark
 
 go 1.22.10
 
