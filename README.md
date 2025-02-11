@@ -17,9 +17,9 @@ Before you begin, please ensure that you have installed all the [requirements](.
 ## Key Features
 Pico’s design is rooted in the need for adaptable, high-performance ZK systems that can keep up with the rapidly evolving cryptography research. Rather than relying on a "one size fits all" solution, Pico’s modular architecture lets you:
 
-- **Leverage Interchangeable Proving Backends**: Select from multiple proving backends to achieve the best performance and efficiency. This is actively a work in progress and the proving field interop only has a few specific workflows that have been tested to work from start to finish.
-- **Integrate App-Specific Circuits**: Seamlessly incorporate specialized circuit/coprocessors to accelerate domain-specific computations. We present our own library of Rust crates that have some common cost centers replaced with zkVM-specific syscalls, greatly decreasing the proving time required for EVM-sensitive workloads. Pico also integrates nicely with our Coprocessor, which allows for even more compact programs.
-- **Customize Proving Workflows**: Assemble and fine-tune proof generation pipelines tailored to your application’s specific requirements. Each STARK proving stage is configurable so it can be better optimized for the different proving hardware utilized by Pico users.
+- **Leverage Interchangeable Proving Backends**: Select from multiple proving backends to achieve the best performance and efficiency. 
+- **Integrate App-Specific Circuits**: Seamlessly incorporate specialized circuit/coprocessors to accelerate domain-specific computations. 
+- **Customize Proving Workflows**: Assemble and fine-tune proof generation pipelines tailored to your application’s specific requirements. 
 
 ## Supported Proving Backends
 One of Pico’s most innovative features is its ability to seamlessly switch between multiple proving backends.
