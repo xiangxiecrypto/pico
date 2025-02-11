@@ -17,7 +17,7 @@ use pico_vm::{
             onchain_circuit::{
                 gnark::builder::OnchainVerifierCircuit,
                 stdin::OnchainStdin,
-                utils::{build_gnark_config, generate_contract_inputs},
+                utils::{build_gnark_config, generate_contract_inputs, save_embed_proof_data},
             },
             shapes::{recursion_shape::RecursionShapeConfig, riscv_shape::RiscvShapeConfig},
         },
@@ -126,6 +126,7 @@ macro_rules! create_sdk_prove_vk_client {
                 };
                 let (constraints, witness) =
                     OnchainVerifierCircuit::<$fc, $bn254_sc>::build(&onchain_stdin);
+                save_embed_proof_data(&riscv_proof, &proof, output.clone())?;
                 build_gnark_config(constraints, witness, output.clone());
                 Ok((riscv_proof, proof))
             }
