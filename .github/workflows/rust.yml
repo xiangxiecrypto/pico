@@ -1,0 +1,129 @@
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - '.gitignore'
+      - 'Makefile'
+      - 'tools/**'
+
+name: Check, Test, and Format
+
+jobs:
+  fmt:
+    if: true
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly-2024-11-27
+          override: true
+      - run: rustup component add rustfmt
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  lint:
+    if: true
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure git for private repo
+        run: |
+          git config --global url."https://${{ secrets.GH_TOKEN }}:@github.com/".insteadOf "https://github.com/"
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly-2024-11-27
+          override: true
+      - run: rustup component add clippy
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --workspace --lib --examples --tests --benches --all-features --locked -- -D warnings
+
+  test:
+    if: true
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure git for private repo
+        run: |
+          git config --global url."https://${{ secrets.GH_TOKEN }}:@github.com/".insteadOf "https://github.com/"
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly-2024-11-27
+          override: true
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cargo run examples
+        run: |
+          # Basic tests
+          RUST_LOG=info FRI_QUERIES=1 cargo run --release --example toy_simple_machine
+          RUST_LOG=info FRI_QUERIES=1 cargo run --release --example test_riscv_emulator
+          RUST_LOG=info FRI_QUERIES=1 cargo run --release --example test_proverchain
+          
+          # KB basic tests
+          RUST_LOG=info FRI_QUERIES=1 cargo run --release  --example test_simple_recursion -- --elf keccak --n 15 --field kb
+          RUST_LOG=info FRI_QUERIES=1 cargo run --release  --example test_riscv -- --elf precompile --field kb
+          
+          # KB e2e test and copy the final STARK proof for later test
+          RUST_LOG=info FRI_QUERIES=1 cargo run --release  --example test_e2e -- --field kb
+          cp constraints.json gnark/koalabear_verifier/
+          cp groth16_witness.json gnark/koalabear_verifier/
+          
+          # BB basic tests
+          RUST_LOG=info FRI_QUERIES=1 cargo run --release --example test_simple_recursion -- --elf keccak --n 15 --field bb
+          RUST_LOG=info FRI_QUERIES=1 cargo run --release --example test_riscv -- --elf precompile --field bb
+
+          # BB e2e test and copy the final STARK proof for later test
+          RUST_LOG=info FRI_QUERIES=1 cargo run --release --example test_e2e -- --field bb
+          cp constraints.json gnark/babybear_verifier/
+          cp groth16_witness.json gnark/babybear_verifier/
+          
+          # M31 basic tests
+          RUST_LOG=info FRI_QUERIES=1 cargo run --release --example test_riscv -- --field m31
+          RUST_LOG=info FRI_QUERIES=1 cargo run --release --example test_riscv -- --elf precompile --field m31
+
+      - name: compile field ffi so
+        run: |
+          cargo build --release --package field-ffi
+          sudo mv ./target/release/libfield_ffi.so /usr/lib/
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.22'
+      - name: gnark_verifier
+        run: |
+          cd gnark/babybear_verifier/
+          go test -timeout 70s -run TestSolveVerifierCircuit
+          cd ../../gnark/koalabear_verifier/
+          go test -timeout 70s -run TestSolveVerifierCircuit

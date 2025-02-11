@@ -1,0 +1,110 @@
+[package]
+name = "pico-vm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+# pico
+pico-derive.workspace = true
+
+# p3
+p3-air.workspace = true
+p3-field.workspace = true
+p3-commit.workspace = true
+p3-matrix.workspace = true
+p3-baby-bear.workspace = true
+p3-util.workspace = true
+p3-challenger.workspace = true
+p3-dft.workspace = true
+p3-fri.workspace = true
+p3-goldilocks.workspace = true
+p3-keccak.workspace = true
+p3-keccak-air.workspace = true
+p3-blake3.workspace = true
+p3-mds.workspace = true
+p3-merkle-tree.workspace = true
+p3-poseidon2.workspace = true
+p3-symmetric.workspace = true
+p3-uni-stark.workspace = true
+p3-maybe-rayon = { workspace = true, features = ["parallel"] }
+p3-bn254-fr.workspace = true
+p3-mersenne-31.workspace = true
+p3-circle.workspace = true
+p3-koala-bear.workspace = true
+
+# misc
+anyhow.workspace = true
+arrayref.workspace = true
+backtrace.workspace = true
+bincode.workspace = true
+bytemuck.workspace = true
+clap.workspace = true
+crossbeam.workspace = true
+csv.workspace = true
+dashmap.workspace = true
+elf.workspace = true
+eyre.workspace = true
+ff.workspace = true
+hashbrown.workspace = true
+hex.workspace = true
+itertools.workspace = true
+lazy_static.workspace = true
+log.workspace = true
+nohash-hasher.workspace = true
+num.workspace = true
+num_cpus.workspace = true
+num-traits.workspace = true
+rand.workspace = true
+rayon.workspace = true
+rayon-scan.workspace = true
+rrs_lib.workspace = true
+serde.workspace = true
+serde_with.workspace = true
+static_assertions.workspace = true
+strum.workspace = true
+strum_macros.workspace = true
+thiserror.workspace = true
+tiny-keccak.workspace = true
+tracing-forest.workspace = true
+tracing-subscriber.workspace = true
+tracing.workspace = true
+typenum.workspace = true
+vec_map.workspace = true
+zkhash.workspace = true
+curve25519-dalek.workspace = true
+k256.workspace = true
+p256.workspace = true
+elliptic-curve.workspace = true
+dashu.workspace = true
+cfg-if.workspace = true
+halo2curves.workspace = true
+num-bigint.workspace = true
+once_cell.workspace = true
+
+serde_json = "1.0.121"
+rug = { version = "1.26.1", optional = true }
+amcl = { package = "snowbridge-amcl", version = "1.0.2", default-features = false, features = [
+  "bls381",
+] }
+sysinfo = "0.30.13"
+hybrid-array = "0.2.1"
+cpu-time = "1.0.0"
+paste = "1.0.15"
+
+
+[dev-dependencies]
+criterion = { version = "0.5.1", features = ["html_reports"] }
+rand = "0.8.5"
+num = { version = "0.4.3", features = ["rand"] }
+
+[features]
+default = []
+debug = []
+debug-lookups = []
+single-threaded = []
+
+# curves
+bigint-rug = ["rug"]
