@@ -8,11 +8,18 @@ use clap::{
     Parser,
 };
 use log::info;
+use p3_air::Air;
 use p3_baby_bear::BabyBear;
+use p3_field::PrimeField32;
 use p3_koala_bear::KoalaBear;
+use p3_symmetric::Permutation;
 use pico_vm::{
+    chips::{
+        chips::riscv_poseidon2::FieldSpecificPoseidon2Chip,
+        precompiles::poseidon2::FieldSpecificPrecompilePoseidon2Chip,
+    },
     configs::{
-        config::StarkGenericConfig,
+        config::{Com, Dom, PcsProverData, StarkGenericConfig, Val},
         field_config::{BabyBearBn254, KoalaBearBn254},
         stark_config::{
             bb_bn254_poseidon2::BabyBearBn254Poseidon2, kb_bn254_poseidon2::KoalaBearBn254Poseidon2,
@@ -32,16 +39,24 @@ use pico_vm::{
             riscv_config::StarkConfig as RiscvBBSC, riscv_kb_config::StarkConfig as RiscvKBSC,
         },
     },
-    machine::logger::setup_logger,
+    machine::{
+        field::FieldSpecificPoseidon2Config,
+        folder::ProverConstraintFolder,
+        keys::{BaseVerifyingKey, HashableKey},
+        logger::setup_logger,
+        proof::BaseProof,
+    },
+    primitives::Poseidon2Init,
     proverchain::{
-        CombineProver, CombineVkProver, CompressProver, CompressVkProver, ConvertProver,
-        EmbedProver, EmbedVkProver, InitialProverSetup, MachineProver, ProverChain, RiscvProver,
+        CombineProver, CompressProver, ConvertProver, EmbedProver, InitialProverSetup,
+        MachineProver, ProverChain, RiscvProver,
     },
 };
 use reqwest::blocking::Client;
 use serde::Serialize;
 use std::{
-    io::{BufRead, BufReader},
+    fs::File,
+    io::{BufRead, BufReader, Read},
     path::PathBuf,
     process::{Command, Stdio},
     thread,
@@ -57,6 +72,9 @@ struct Args {
 
     #[clap(long, use_value_delimiter = true, default_value = "bb")]
     field: String,
+
+    #[clap(long, default_value = "false")]
+    noprove: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -83,6 +101,11 @@ const PROGRAMS: &[Benchmark] = &[
         input: Some("./perf/bench_data/reth-17106222.bin"),
     },
     Benchmark {
+        name: "reth-22059900",
+        elf: "./perf/bench_data/reth-elf",
+        input: Some("./perf/bench_data/reth-22059900.bin"),
+    },
+    Benchmark {
         name: "reth-20528709",
         elf: "./perf/bench_data/reth-elf",
         input: Some("./perf/bench_data/reth-20528709.bin"),
@@ -92,17 +115,23 @@ const PROGRAMS: &[Benchmark] = &[
 #[allow(clippy::type_complexity)]
 fn load<P>(bench: &Benchmark) -> Result<(Vec<u8>, EmulatorStdin<P, Vec<u8>>)> {
     let elf = std::fs::read(bench.elf)?;
-    let stdin = match bench.input {
-        None => Vec::new(),
-        Some(input) => {
-            if input == "fibonacci-300kn" {
-                vec![bincode::serialize(&300_000u32).expect("failed to serialize")]
-            } else {
-                bincode::deserialize(&std::fs::read(input)?)?
-            }
+    let mut stdin_builder = EmulatorStdin::<P, Vec<u8>>::new_builder();
+
+    match bench.input {
+        None => {}
+        Some("fibonacci-300kn") => {
+            let input_bytes = bincode::serialize(&300_000u32).expect("failed to serialize");
+            stdin_builder.write_slice(&input_bytes);
         }
-    };
-    let stdin = EmulatorStdin::new_riscv(&stdin);
+        Some(input_path) => {
+            let mut file = File::open(input_path).expect("Failed to open file");
+            let mut buffer: Vec<u8> = Vec::new();
+            file.read_to_end(&mut buffer).expect("Failed to read file");
+            stdin_builder.write_slice(&buffer);
+        }
+    }
+
+    let stdin = stdin_builder.finalize();
 
     Ok((elf, stdin))
 }
@@ -313,9 +342,9 @@ fn bench_bb_vk(bench: &Benchmark) -> Result<PerformanceReport> {
     let recursion_shape_config =
         RecursionShapeConfig::<BabyBear, RecursionChipType<BabyBear>>::default();
     let combine =
-        CombineVkProver::new_with_prev(&convert, recursion_opts, Some(recursion_shape_config));
-    let compress = CompressVkProver::new_with_prev(&combine, (), None);
-    let embed = EmbedVkProver::<_, _, Vec<u8>>::new_with_prev(&compress, (), None);
+        CombineProver::new_with_prev(&convert, recursion_opts, Some(recursion_shape_config));
+    let compress = CompressProver::new_with_prev(&combine, (), None);
+    let embed = EmbedProver::<_, _, Vec<u8>>::new_with_prev(&compress, (), None);
 
     let riscv_vk = riscv.vk();
 
@@ -445,9 +474,9 @@ fn bench_kb_vk(bench: &Benchmark) -> Result<PerformanceReport> {
     let recursion_shape_config =
         RecursionShapeConfig::<KoalaBear, RecursionChipType<KoalaBear>>::default();
     let combine =
-        CombineVkProver::new_with_prev(&convert, recursion_opts, Some(recursion_shape_config));
-    let compress = CompressVkProver::new_with_prev(&combine, (), None);
-    let embed = EmbedVkProver::<_, _, Vec<u8>>::new_with_prev(&compress, (), None);
+        CombineProver::new_with_prev(&convert, recursion_opts, Some(recursion_shape_config));
+    let compress = CompressProver::new_with_prev(&combine, (), None);
+    let embed = EmbedProver::<_, _, Vec<u8>>::new_with_prev(&compress, (), None);
 
     let riscv_vk = riscv.vk();
 
@@ -648,6 +677,57 @@ fn bench_kb(bench: &Benchmark) -> Result<PerformanceReport> {
     })
 }
 
+fn bench_tracegen<SC>(bench: &Benchmark) -> Result<PerformanceReport>
+where
+    SC: Send + StarkGenericConfig + 'static,
+    Com<SC>: Send + Sync,
+    Dom<SC>: Send + Sync,
+    PcsProverData<SC>: Clone + Send + Sync,
+    BaseProof<SC>: Send + Sync,
+    BaseVerifyingKey<SC>: HashableKey<Val<SC>>,
+    Val<SC>: PrimeField32 + FieldSpecificPoseidon2Config + Poseidon2Init,
+    <Val<SC> as Poseidon2Init>::Poseidon2: Permutation<[Val<SC>; 16]>,
+    FieldSpecificPoseidon2Chip<Val<SC>>: Air<ProverConstraintFolder<SC>>,
+    FieldSpecificPrecompilePoseidon2Chip<Val<SC>>: Air<ProverConstraintFolder<SC>>,
+{
+    let (elf, stdin) = load(bench)?;
+    let riscv_opts = EmulatorOpts::bench_riscv_ops();
+
+    info!(
+        "RISCV Chunk Size: {}, RISCV Chunk Batch Size: {}",
+        riscv_opts.chunk_size, riscv_opts.chunk_batch_size
+    );
+
+    let riscv = RiscvProver::new_initial_prover((SC::new(), &elf), riscv_opts, None);
+
+    info!("╔═══════════════════════╗");
+    info!("║      RISCV PHASE      ║");
+    info!("╚═══════════════════════╝");
+    info!("Running RISCV");
+    let (cycles, riscv_duration) = time_operation(|| riscv.run_tracegen(stdin));
+
+    info!("╔═══════════════════════╗");
+    info!("║ PERFORMANCE SUMMARY   ║");
+    info!("╚═══════════════════════╝");
+    info!("Time Metrics (wall time)");
+    info!("----------------------------------------");
+    info!("RISCV:     {}", format_duration(riscv_duration));
+
+    Ok(PerformanceReport {
+        program: bench.name.to_string(),
+        cycles,
+        riscv_duration,
+        convert_duration: Duration::default(),
+        combine_duration: Duration::default(),
+        compress_duration: Duration::default(),
+        embed_duration: Duration::default(),
+        recursion_duration: Duration::default(),
+        evm_duration: Duration::default(),
+        total_duration: riscv_duration,
+        success: true,
+    })
+}
+
 fn format_results(_args: &Args, results: &[PerformanceReport]) -> Vec<String> {
     let mut table_text = String::new();
     table_text.push_str("```\n");
@@ -692,31 +772,47 @@ fn main() -> Result<()> {
             .collect()
     };
 
-    if args.field.as_str() == "kb_vk" {
-        prepare_kb_gnark()
-    } else if args.field.as_str() == "bb_vk" {
-        prepare_bb_gnark()
-    }
+    if args.noprove {
+        let mut results = Vec::with_capacity(programs.len());
+        let run_bench = match args.field.as_str() {
+            "bb" | "bb_vk" => |bench| bench_tracegen::<RiscvBBSC>(bench),
+            "kb" | "kb_vk" => |bench| bench_tracegen::<RiscvKBSC>(bench),
+            _ => panic!("bad field, use bb or kb"),
+        };
 
-    let run_bench: fn(&Benchmark) -> _ = match args.field.as_str() {
-        "bb" => bench_bb,
-        "kb" => bench_kb,
-        "kb_vk" => bench_kb_vk,
-        "bb_vk" => bench_bb_vk,
-        _ => panic!("bad field, use bb or kb"),
-    };
+        for bench in programs.iter() {
+            results.push(run_bench(bench)?);
+        }
 
-    let mut results = Vec::with_capacity(programs.len());
-    for bench in programs {
-        results.push(run_bench(&bench)?);
-    }
+        let output = format_results(&args, &results);
+        println!("{}", output.join("\n"));
+    } else {
+        if args.field.as_str() == "kb_vk" {
+            prepare_kb_gnark()
+        } else if args.field.as_str() == "bb_vk" {
+            prepare_bb_gnark()
+        }
 
-    let output = format_results(&args, &results);
-    println!("{}", output.join("\n"));
+        let run_bench: fn(&Benchmark) -> _ = match args.field.as_str() {
+            "bb" => bench_bb,
+            "kb" => bench_kb,
+            "kb_vk" => bench_kb_vk,
+            "bb_vk" => bench_bb_vk,
+            _ => panic!("bad field, use bb or kb"),
+        };
 
-    // stop and rm the docker server
-    if args.field.as_str() == "kb_vk" || args.field.as_str() == "bb_vk" {
-        clean_gnark_env()
+        let mut results = Vec::with_capacity(programs.len());
+        for bench in programs {
+            results.push(run_bench(&bench)?);
+        }
+
+        let output = format_results(&args, &results);
+        println!("{}", output.join("\n"));
+
+        // stop and rm the docker server
+        if args.field.as_str() == "kb_vk" || args.field.as_str() == "bb_vk" {
+            clean_gnark_env()
+        }
     }
 
     Ok(())
