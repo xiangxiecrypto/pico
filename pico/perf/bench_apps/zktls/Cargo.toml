@@ -1,0 +1,9 @@
+[package]
+name = "zktls"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+pico-sdk = { workspace = true }
+zktls-att-verification = { git = "https://github.com/primus-labs/zktls-att-verification.git", branch = "main" }
+serde_json = "1.0"
