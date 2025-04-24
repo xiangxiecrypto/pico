@@ -16,7 +16,7 @@ PROGRAMS=("zktls-verify16, zktls-verify256, zktls-verify1024, zktls-verify2048")
 pushd pico
 for prog in "${PROGRAMS[@]}"; do
   echo "Benchmarking $prog"
-  cargo run --profile perf --bin bench --features jemalloc --features nightly-features -- --programs $prog --field kb_vk >../../logs/pico-$prog.log
+  cargo run --profile perf --bin bench --features jemalloc --features nightly-features -- --programs $prog --field kb_vk >../logs/pico-$prog.log
 done
 popd
 
