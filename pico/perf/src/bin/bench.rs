@@ -145,31 +145,39 @@ fn load<P>(bench: &Benchmark) -> Result<(Vec<u8>, EmulatorStdin<P, Vec<u8>>)> {
         }
         Some("zktls-verify16") => {
             let verifying_key = std::fs::read_to_string("./perf/bench_data/verifying_k256.key").unwrap();
-            stdin_builder.write_slice(verifying_key.as_bytes());
+            let bytes = bincode::serialize(&verifying_key).expect("failed to serialize");
+            stdin_builder.write_slice(&bytes);
 
             let verifying_data = std::fs::read_to_string("./perf/bench_data/data/bench16.json").unwrap();
-            stdin_builder.write_slice(verifying_data.as_bytes());
+            let bytes = bincode::serialize(&verifying_data).expect("failed to serialize");
+            stdin_builder.write_slice(&bytes);
         }
         Some("zktls-verify256") => {
             let verifying_key = std::fs::read_to_string("./perf/bench_data/verifying_k256.key").unwrap();
-            stdin_builder.write_slice(verifying_key.as_bytes());
+            let bytes = bincode::serialize(&verifying_key).expect("failed to serialize");
+            stdin_builder.write_slice(&bytes);
 
             let verifying_data = std::fs::read_to_string("./perf/bench_data/data/bench256.json").unwrap();
-            stdin_builder.write_slice(verifying_data.as_bytes());
+            let bytes = bincode::serialize(&verifying_data).expect("failed to serialize");
+            stdin_builder.write_slice(&bytes);
         }
         Some("zktls-verify1024") => {
             let verifying_key = std::fs::read_to_string("./perf/bench_data/verifying_k256.key").unwrap();
-            stdin_builder.write_slice(verifying_key.as_bytes());
+            let bytes = bincode::serialize(&verifying_key).expect("failed to serialize");
+            stdin_builder.write_slice(&bytes);
 
             let verifying_data = std::fs::read_to_string("./perf/bench_data/data/bench1024.json").unwrap();
-            stdin_builder.write_slice(verifying_data.as_bytes());
+            let bytes = bincode::serialize(&verifying_data).expect("failed to serialize");
+            stdin_builder.write_slice(&bytes);
         }
         Some("zktls-verify2048") => {
             let verifying_key = std::fs::read_to_string("./perf/bench_data/verifying_k256.key").unwrap();
-            stdin_builder.write_slice(verifying_key.as_bytes());
+            let bytes = bincode::serialize(&verifying_key).expect("failed to serialize");
+            stdin_builder.write_slice(&bytes);
 
             let verifying_data = std::fs::read_to_string("./perf/bench_data/data/bench2048.json").unwrap();
-            stdin_builder.write_slice(verifying_data.as_bytes());
+            let bytes = bincode::serialize(&verifying_data).expect("failed to serialize");
+            stdin_builder.write_slice(&bytes);
         }
         Some(input_path) => {
             let mut file = File::open(input_path).expect("Failed to open file");
