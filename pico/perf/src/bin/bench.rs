@@ -144,31 +144,31 @@ fn load<P>(bench: &Benchmark) -> Result<(Vec<u8>, EmulatorStdin<P, Vec<u8>>)> {
             stdin_builder.write_slice(&input_bytes);
         }
         Some("zktls-verify16") => {
-            let verifying_key = std::fs::read_to_string("./perf/bench_data/verifying_k256.key").unwrap();
+            let verifying_key = std::fs::read_to_string("pico/perf/bench_data/verifying_k256.key").unwrap();
             stdin_builder.write_slice(&verifying_key.as_bytes());
 
-            let verifying_data = std::fs::read_to_string("./perf/bench_data/data/bench16.json").unwrap();
+            let verifying_data = std::fs::read_to_string("pico/perf/bench_data/data/bench16.json").unwrap();
             stdin_builder.write_slice(&verifying_data.as_bytes());
         }
         Some("zktls-verify256") => {
-            let verifying_key = std::fs::read_to_string("./perf/bench_data/verifying_k256.key").unwrap();
+            let verifying_key = std::fs::read_to_string("pico/perf/bench_data/verifying_k256.key").unwrap();
             stdin_builder.write_slice(&verifying_key.as_bytes());
 
-            let verifying_data = std::fs::read_to_string("./perf/bench_data/data/bench256.json").unwrap();
+            let verifying_data = std::fs::read_to_string("pico/perf/bench_data/data/bench256.json").unwrap();
             stdin_builder.write_slice(&verifying_data.as_bytes());
         }
         Some("zktls-verify1024") => {
-            let verifying_key = std::fs::read_to_string("./perf/bench_data/verifying_k256.key").unwrap();
+            let verifying_key = std::fs::read_to_string("pico/perf/bench_data/verifying_k256.key").unwrap();
             stdin_builder.write_slice(&verifying_key.as_bytes());
 
-            let verifying_data = std::fs::read_to_string("./perf/bench_data/data/bench1024.json").unwrap();
+            let verifying_data = std::fs::read_to_string("pico/perf/bench_data/data/bench1024.json").unwrap();
             stdin_builder.write_slice(&verifying_data.as_bytes());
         }
         Some("zktls-verify2048") => {
-            let verifying_key = std::fs::read_to_string("./perf/bench_data/verifying_k256.key").unwrap();
+            let verifying_key = std::fs::read_to_string("pico/perf/bench_data/verifying_k256.key").unwrap();
             stdin_builder.write_slice(&verifying_key.as_bytes());
 
-            let verifying_data = std::fs::read_to_string("./perf/bench_data/data/bench2048.json").unwrap();
+            let verifying_data = std::fs::read_to_string("pico/perf/bench_data/data/bench2048.json").unwrap();
             stdin_builder.write_slice(&verifying_data.as_bytes());
         }
         Some(input_path) => {
