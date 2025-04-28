@@ -152,3 +152,6 @@ tracing-subscriber = { version = "0.3.18", features = ["std", "env-filter"] }
 typenum = "1.17.0"
 vec_map = "0.8.2"
 zkhash = "0.2.0"
+
+[patch.crates-io]
+ecdsa-core = { git = "https://github.com/brevis-network/signatures", package = "ecdsa", branch = "patch-v1.0.1" }
