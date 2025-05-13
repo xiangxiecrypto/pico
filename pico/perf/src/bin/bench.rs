@@ -112,22 +112,22 @@ const PROGRAMS: &[Benchmark] = &[
     },
     Benchmark {
         name: "zktls-verify16",
-        elf: "./perf/bench_apps/zktls/elf/riscv32im-pico-zkvm-elf",
+        elf: "./perf/bench_data/zktls-elf",
         input: Some("zktls-verify16"),
     },
     Benchmark {
         name: "zktls-verify256",
-        elf: "./perf/bench_apps/zktls/elf/riscv32im-pico-zkvm-elf",
+        elf: "../perf/bench_data/zktls-elf",
         input: Some("zktls-verify256"),
     },
     Benchmark {
         name: "zktls-verify1024",
-        elf: "./perf/bench_apps/zktls/elf/riscv32im-pico-zkvm-elf",
+        elf: "./perf/bench_data/zktls-elf",
         input: Some("zktls-verify1024"),
     },
     Benchmark {
         name: "zktls-verify2048",
-        elf: "./perf/bench_apps/zktls/elf/riscv32im-pico-zkvm-elf",
+        elf: "./perf/bench_data/zktls-elf",
         input: Some("zktls-verify2048"),
     },
 ];
